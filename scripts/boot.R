@@ -18,6 +18,7 @@ libs_to_call <- list(
   "rgbif",
   "sf",
   "sp",
+  "terra",
   "stringr",
   "tidyverse",
   "vegan",
@@ -207,9 +208,21 @@ extents <- list(
   )
 )
 
-# R <- rast(
-#   "/home/borea/Documents/mosceco/r_projects/MOSCECO_L2/species_distribution_modeling/data/tidy/climatologies_mosaic/climatologies_mosaic_pca.tif"
+# Import d'une copie de climatologies comme raster de références
+# notamment pour les extractions de valeurs de données environnementales
+# à partir des stations de collect des explorations scientifiques du MNHN
+# cmd <- paste(
+#   "rsync",
+#   "-avuc",
+#   "--delete",
+#   "/home/borea/Documents/mosceco/r_projects/MOSCECO_L2/habitat_suitability/data/tidy/climatologies_mosaic",
+#   here("data", "raw") %>% paste0("/")
 # )
+# system(cmd)
+
+R <- here("data", "raw", "climatologies_mosaic") %>%
+  list.files(full.names = T) %>%
+  rast()
 
 # split by taxa
 species <- lapply(

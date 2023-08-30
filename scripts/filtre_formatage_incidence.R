@@ -2,151 +2,151 @@
 
 # Formatage des données
 ########################################################################
-THRESH <- 0
+THRESH <- 30
 ########################################################################
 
 stations_islands <- stations
-stations <- stations %>% 
+stations <- stations %>%
   append(list(ANT = do.call(rbind, stations)))
 stations <- stations[sort(names(stations))]
 
 species_all_incidences <- species
 occurrences <- lapply(
-  names(species), 
+  names(species),
   function(isl) {
-    
+
     path_data_incidence_isl <- here(path_figures_occfor, isl)
     makeMyDir(path_data_incidence_isl)
-    
+
     dataset_threshold <- mapply(
       function(tax, title_tax, col_tax) {
-        
+
         path_data_incidence_isl_tax <- here(path_data_incidence_isl, title_tax)
         makeMyDir(path_data_incidence_isl_tax)
-        
+
         tb <- species[[isl]][[tax]]
         tc <- count(tb, scientificName)
         tc <- tc[order(-tc$n), ]
         tc_threshold <- tc[tc$n >= THRESH, ]
-        tb_threshold <- tb %>% 
+        tb_threshold <- tb %>%
           filter(scientificName %in% tc_threshold$scientificName)
         tb_split <- split(tb_threshold, f = tb_threshold$scientificName)
-        
+
         tbs_absences <- lapply(
           tb_split,
           function(spe) {
-            
+
             # presences/incidence ----
             path_data_incidence_isl_tax_inci <- here(
               path_data_incidence_isl_tax, "incidence"
             )
             makeMyDir(path_data_incidence_isl_tax_inci)
-            
+
             # spe <- tb_split$`Coralliophila salebrosa`
             # spe <- tb_split$`Mithraculus coryphe`
-            
+
             bn_spe <- unique(spe$scientificName)
             print(bn_spe)
             # sauvegarde
             write.csv(
-              spe, 
+              spe,
               here(
                 path_data_incidence_isl_tax_inci,
                 paste(
                   "incidence",
-                  "dataset", 
+                  "dataset",
                   gsub(" ", "-", bn_spe),
                   sep = "_"
                 ) %>% paste0(".csv")
               ),
               row.names = F
             )
-            
+
             # absences ----
             path_data_incidence_isl_tax_abse <- here(
               path_data_incidence_isl_tax, "absences"
             )
             makeMyDir(path_data_incidence_isl_tax_abse)
-            
+
             # in the same table format as presences
-            absences <- stations[[isl]] %>% 
+            absences <- stations[[isl]] %>%
               filter(!collectEvent %in% spe$collectStation)
-            absences <- absences %>% 
+            absences <- absences %>%
               add_column(
-                occurrenceID = NA, 
-                database = NA, 
+                occurrenceID = NA,
+                database = NA,
                 CD_NOM = unique(spe$CD_NOM)[[1]],
                 CD_REF = unique(spe$CD_REF)[[1]],
                 aphiaID = unique(spe$aphiaID),
                 family = unique(spe$family),
                 scientificName = unique(spe$scientificName),
                 author = unique(spe$author)[[1]],
-                coordinateUncertaintyInMeters = NA, 
-                individualCount = 0, 
-                citation = NA, 
-                expedition = NA, 
-                basisOfRecord = "absence", 
-                institutionCode = NA, 
-                collectionCode = NA, 
+                coordinateUncertaintyInMeters = NA,
+                individualCount = 0,
+                citation = NA,
+                expedition = NA,
+                basisOfRecord = "absence",
+                institutionCode = NA,
+                collectionCode = NA,
                 catalogNumber = NA
-              ) %>% 
+              ) %>%
               select(
-                collectStation = collectEvent, 
+                collectStation = collectEvent,
                 country = country_iso2,
                 everything())
-            absences <- absences %>% 
+            absences <- absences %>%
               select(all_of(names(spe)))
-            
+
             # suppression des dupliqués
             absences <- absences %>%
-              st_drop_geometry() %>% 
+              st_drop_geometry() %>%
               add_column(ABS = TRUE)
-            spe <- spe %>% 
+            spe <- spe %>%
               add_column(ABS = FALSE)
-            all_occ <- spe %>% 
+            all_occ <- spe %>%
               rbind(absences)
-            all_occ <- all_occ %>% 
+            all_occ <- all_occ %>%
               filter(
                 !duplicated(
-                  all_occ %>% 
+                  all_occ %>%
                     select(eventDate, decimalLongitude, decimalLatitude)
                 )
               )
-            absences <- all_occ %>% 
+            absences <- all_occ %>%
               filter(ABS)
-            absences <- absences %>% 
+            absences <- absences %>%
               select(-ABS)
-            
+
             # sauvegarde
             write.csv(
-              absences, 
+              absences,
               here(
                 path_data_incidence_isl_tax_abse,
                 paste(
                   "absence",
-                  "dataset", 
+                  "dataset",
                   gsub(" ", "-", bn_spe),
                   sep = "_"
                 ) %>% paste0(".csv")
               ),
               row.names = F
             )
-            
+
             return(absences)
           }
         )
-        
+
         list_out <- list(
-          incidnc = tb_threshold, 
+          incidnc = tb_threshold,
           absence = do.call(rbind, tbs_absences)
         )
-        
+
         return(list_out)
       },
       as.character(taxa),
-      Taxa, 
+      Taxa,
       colors_taxa,
-      SIMPLIFY = F, 
+      SIMPLIFY = F,
       USE.NAMES = T
     )
     return(dataset_threshold)
@@ -187,22 +187,22 @@ absence <- list(
 
 # sauvegarde en rds
 saveRDS(
-  species, 
+  species,
   here(
-    "data", 
-    "tidy", 
-    "occ_threshold", 
-    paste("species", paste0("threshold", THRESH), "incidence", sep = "_") %>% 
+    "data",
+    "tidy",
+    "occ_threshold",
+    paste("species", paste0("threshold", THRESH), "incidence", sep = "_") %>%
       paste0(".rds")
   )
 )
 saveRDS(
-  absence, 
+  absence,
   here(
-    "data", 
-    "tidy", 
-    "occ_threshold", 
-    paste("species", paste0("threshold", THRESH), "absence", sep = "_") %>% 
+    "data",
+    "tidy",
+    "occ_threshold",
+    paste("species", paste0("threshold", THRESH), "absence", sep = "_") %>%
       paste0(".rds")
   )
 )
@@ -217,13 +217,13 @@ pa <- mapply(
       },
       s,
       a,
-      SIMPLIFY = F, 
+      SIMPLIFY = F,
       USE.NAMES = T
     )
   },
-  species, 
-  absence, 
-  SIMPLIFY = F, 
+  species,
+  absence,
+  SIMPLIFY = F,
   USE.NAMES = T
 )
 

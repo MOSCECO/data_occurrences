@@ -1,7 +1,7 @@
 # Études des données
 
-path_figures_histo <- here("figures", "histogrammes")
-makeMyDir(path_figures_histo)
+path_figures_diagrammes <- here("figures", "diagrammes_distribution_especes")
+makeMyDir(path_figures_diagrammes)
 
 species_a <- species[2:3]
 
@@ -70,6 +70,7 @@ figures_distributions <- lapply(
           # Données
           t_whittaker <- sort(tc$n, decreasing = T) # Ns dans entropart
 
+          # Diagramme de Whittaker
           speciesDistributionMarcon(
             Ns = t_whittaker, distribution = "lnorm", col = col_tax,
             main = paste(
@@ -95,7 +96,7 @@ figures_distributions <- lapply(
           ggexport(
             p2,
             filename = here(
-              path_figures_histo,
+              path_figures_diagrammes,
               paste(
                 "diagramme",
                 diagram,
@@ -145,7 +146,7 @@ p_distributions <- ((figures_distributions[[1]][[1]] /
 ggexport(
   p_distributions,
   filename = here(
-    path_figures_histo,
+    path_figures_diagrammes,
     paste(
       "diagrammes",
       diagram,
