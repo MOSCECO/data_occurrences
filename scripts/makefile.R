@@ -30,3 +30,35 @@
 
 # (2) Présentation des données d'occurrences pour le rapport  ----
 # (Ancien data_occ_analyses)
+
+# figures pour datapaper
+# source(here("scripts", "summary_for_datapaper.R"))
+
+# jeu de données commun
+source(here("scripts", "jeu_de_donnees_commun.R"))
+
+# jeu de données commun
+source(here("scripts", "autochtone_dataset.R"))
+
+# modification du jeu de données en autochtones / partagées
+by_islands_species <- species
+species <- list(
+  ANT = common_species,
+  GLP = autoch_species$GLP,
+  MTQ = autoch_species$MTQ
+)
+
+# Histogrammes
+# source(here("scripts", "figures_histogrammes.R"))
+# source(here("scripts", "figures_histogrammes_common.R"))
+
+# Cartes
+# source(here("scripts", "figures_cartes_de_distribution.R"))
+
+# Jeux de données formatés + cartes
+source(here("scripts", "filtre_formatage_incidence.R"))
+# source(here("scripts", "figures_cartes_de_distribution.R"))
+
+# Jeux de données réduits
+source(here("scripts", "filtre_seuil_incidence.R"))
+# source(here("scripts", "figures_cartes_de_distribution_seuil.R"))

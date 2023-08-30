@@ -2,40 +2,36 @@
 
 # libraries ----
 libs_to_call <- list(
-
+  
   "data.table",
   "ggnewscale",
   "ggplot2",
-  "ggpubr",
-  "ggvenn",
+  "ggpubr", 
   "here",
-  "httr",
-  "jsonlite",
-  "patchwork",
+  "patchwork", 
   "purrr",
   "remotes",
   "reshape2",
-  "rgbif",
-  "sf",
-  "sp",
+  "sf", 
+  "sp", 
   "stringr",
+  "terra",
   "tidyverse",
-  "vegan",
-  "worrms"
-
+  "vegan"
+  
 )
 
 # library calls
 lapply(libs_to_call, function(i) {
-
+  
   bool <- is.element(i, .packages(all.available = TRUE))
-
+  
   if (!bool) {
     install.packages(i)
   }
-
+  
   library(i, character.only = TRUE)
-
+  
 }
 )
 
@@ -43,25 +39,25 @@ lapply(libs_to_call, function(i) {
 # remote_libs_to_call <- list(
 #   "RCMEMS"
 # )
-#
+# 
 # github_accounts <- list(
 #   "markpayneatwork"
 # )
-#
+# 
 # mapply(
 #   function(pckg, usr) {
-#
+#     
 #     bool <- is.element(pckg, .packages(all.available = TRUE))
-#
+#     
 #     if (!bool) {
 #       remotes::install_github(paste0(usr, "/", pckg))
 #     }
-#
+#     
 #     library(pckg, character.only = TRUE)
-#
-#   },
-#   remote_libs_to_call,
-#   github_accounts,
+#     
+#   }, 
+#   remote_libs_to_call, 
+#   github_accounts, 
 #   SIMPLIFY = FALSE
 # )
 
@@ -75,25 +71,18 @@ lapply(
 )
 
 # importations d'autres projets R ----
-# data_stn_prep : "data", "raw", "shp"
-#                (polygones des îles, masses d'eau DCE, bathymétrie mondiale)
-#                 "data", "tidy", "shp"
-#                (stations et masses d'eaux modifiées)
+# data_occ_prep : "data", "raw", "shp"
+#                (polygones des îles, masses d'eau DCE, bathymétrie mondiale,
+#                stations et masses d'eaux modifiées)
+#                 "data", "tidy", "occ"
+#                (occurrences formatées à partir des extractions)
 
 # shapefiles ----
 sf::sf_use_s2(FALSE)
-wgs84 <- "EPSG:4326"
+wgs <- "EPSG:4326"
 utm20n <- "EPSG:32620"
 islands <- c("GLP", "MTQ")
 names(islands) <- islands
-# data_occ_prep
-Taxa <- c("muricidae", "majoidea")
-names(Taxa) <- Taxa
-taxa <- c("muri", "majo")
-names(taxa) <- taxa
-superfamilies <- sort(c("Muricoidea", "Majoidea"))
-names(superfamilies) <- superfamilies
-# data_occ_analyses
 Taxa <- c("Majoidea", "Muricidae")
 names(Taxa) <- Taxa
 taxa <- c("majo", "muri")
@@ -101,63 +90,12 @@ names(taxa) <- Taxa
 colors_taxa <- c("#d04c4e", "#5765b4")
 names(colors_taxa) <- Taxa
 
-# gbif id ----
-user = "igregman2"
-pwd = "BahaMut822?Majoidea"
-email = "gregoire.maniel4@mnhn.fr"
-
-# databases informations ----
-databases_infos <- list(
-  gbif = list(
-    name = "gbif",
-    download_url = "http://api.gbif.org/v1/occurrence/download/request",
-    output_file_extension = "csv",
-    output_file_separator = "\t"
-  ),
-  obis = list(
-    name = "obis",
-    download_url = "https://api.obis.org/v3/occurrence",
-    output_file_extension = "csv",
-    output_file_separator = "\t"
-  ),
-  oobs = here("data", "raw", "swagger.json") %>%
-    fromJSON(),
-  inat = list(
-    name = "iNaturalist",
-    output_file_extension = "csv",
-    output_file_separator = "\t"
-  )
-)
-
-# mappemonde
-# wrld <- map_data('world') %>% filter(region != "Antarctica") %>% fortify()
-# wrld_sf <- wrld %>%
-#   split(f = .$group) %>%
-#   lapply(
-#     ., \(tb) {
-#       tb %>% select(long, lat) %>% as.matrix() %>% list() %>% st_polygon()
-#     }
-#   ) %>%
-#   st_sfc(crs = st_crs(maps$GLP))
-# st_write(wrld_sf, here("data", "raw", "mappemonde.shp"))
-wrld_sf <- st_read(here("data", "raw", "mappemonde.shp"))
-
-# erosion de la mappemonde
-wrld_sf_buffer <- wrld_sf %>%
-  st_union() %>%
-  # st_crop(st_bbox(occ_sf)) %>%
-  st_wrap_dateline() %>%
-  st_transform(crs = "EPSG:4087") %>%
-  st_buffer(-20000) %>%
-  st_transform(crs = "EPSG:4326")
-# ggplot() + geom_sf(data = wrld_sf_buffer)
-
 # polygones îles ----
 maps <- list.files(
   here("data", "raw", "shp", "polygones_iles"),
-  pattern = "*.shp",
+  pattern = "*.shp", 
   full.names = T
-) %>%
+) %>% 
   lapply(st_read)
 names(maps) <- islands
 
@@ -171,30 +109,13 @@ me <- readRDS(
   here("data", "raw", "shp", "ART_masses_d-eaux", "me.rds")
 )
 
-# folder creation: occurrences ----
-p <- here("data", "tidy", "occ")
-makeMyDir(p)
+# profondeurs
+bathy <- readRDS(
+  here("data", "raw", "shp", "bathymetries.rds")
+)
 
-# data ----
-phyla <- list.files(
-  here("data", "raw", "occ"),
-  pattern = "*.csv",
-  full.names = T
-) %>%
-  lapply(read.csv, fileEncoding = "UTF-16")
-names(phyla) <- c("crusta", "mollsc")
-lapply(phyla, dim)
+r <- terra::rast("/home/borea/Documents/mosceco/r_projects/MOSCECO_L2/data_occ_analyses/data/raw/shp/MNT_FACADE_ANTS_HOMONIM_PBMA/MNT_FACADE_ANTS_HOMONIM_PBMA/DONNEES/MNT_ANTS100m_HOMONIM_WGS84_PBMA_ZNEG.grd")
 
-# 2023-03-25
-# Pour enrichir la niche écologique observée des espèces, téléchargement
-# des occurrences d'espèces pour une répartition mondiale.
-# ocurrences d'espèces  ----
-species <- here("data", "tidy", "occ") %>%
-  list.files(pattern = "invmar_clean", full.names = T) %>%
-  lapply(read.csv)
-names(species) <- c("GLP", "MTQ")
-
-# data_occ_analyses
 # profondeurs
 extents <- list(
   GLP = list(
@@ -207,13 +128,22 @@ extents <- list(
   )
 )
 
-# R <- rast(
-#   "/home/borea/Documents/mosceco/r_projects/MOSCECO_L2/species_distribution_modeling/data/tidy/climatologies_mosaic/climatologies_mosaic_pca.tif"
-# )
+R <- rast(
+  "/home/borea/Documents/mosceco/r_projects/MOSCECO_L2/species_distribution_modeling/data/tidy/climatologies_mosaic/climatologies_mosaic_pca.tif"
+)
+
+# ocurrences d'espèces  ----
+species <- list.files(
+  here("data", "raw", "occ"),
+  pattern = "*.csv", 
+  full.names = T
+) %>% 
+  lapply(read.csv)
+names(species) <- islands
 
 # split by taxa
 species <- lapply(
-  species,
+  species, 
   function(tb) {
     tb <- tb %>% add_column(
       split = ifelse(tb$family == "Muricidae", "muri", "majo")
@@ -227,14 +157,14 @@ species <- lapply(
 # délétion des dupliqués (mêmes coordonnées, même jour)
 species_withdups <- species
 species <- lapply(
-  islands,
+  islands, 
   function(isl) {
     out <- lapply(
-      taxa,
+      taxa, 
       function(tax) {
         tb <- species[[isl]][[tax]]
         return(
-          tb %>%
+          tb %>% 
             filter(
               !duplicated(
                 tb %>% select(aphiaID, eventDate, decimalLongitude, decimalLatitude)
@@ -249,12 +179,12 @@ species <- lapply(
 )
 
 # Liste des espèces par campagne d'exploration
-A <- do.call(rbind, species %>%
-               lapply(\(l) do.call(rbind, l))) %>%
-  select(scientificName, expedition) %>%
+A <- do.call(rbind, species %>% 
+  lapply(\(l) do.call(rbind, l))) %>% 
+  select(scientificName, expedition) %>% 
   filter(!duplicated(.))
-
-A$expedition <- factor(A$expedition)
+library(ggvenn)
+A$expedition <- factor(A$expedition) 
 B <- dcast(A, scientificName ~ expedition)
 B[, -1] <- apply(B[, -1], 2, \(x) ifelse(is.na(x), FALSE, TRUE))
 ggvenn(B)
@@ -268,13 +198,45 @@ C <- B %>% transmute(KARUBENTHOS = `KARUBENTHOS 2012` | `KARUBENTHOS 2`)
 C <- cbind(B$scientificName, C, MADIBENTHOS = B$MADIBENTHOS)
 ggvenn(C)
 
+# figures pour datapaper
+# source(here("scripts", "summary_for_datapaper.R"))
+
 path_figures_occ <- here("data",  "tidy", "occ")
 makeMyDir(path_figures_occ)
+
+# jeu de données commun
+source(here("scripts", "jeu_de_donnees_commun.R"))
+
+# jeu de données commun
+source(here("scripts", "autochtone_dataset.R"))
+
+# modification du jeu de données en autochtones / partagées
+by_islands_species <- species
+species <- list(
+  ANT = common_species,
+  GLP = autoch_species$GLP,
+  MTQ = autoch_species$MTQ
+)
+
+# Histogrammes
+# source(here("scripts", "figures_histogrammes.R"))
+# source(here("scripts", "figures_histogrammes_common.R"))
+
+# Cartes
+# source(here("scripts", "figures_cartes_de_distribution.R"))
 
 # formatage des données
 path_figures_occfor <- here("data",  "tidy", "occ_format")
 makeMyDir(path_figures_occfor)
 
-# dossier des occurrences filtrées au seuil
+# Jeux de données formatés + cartes
+source(here("scripts", "filtre_formatage_incidence.R"))
+# source(here("scripts", "figures_cartes_de_distribution.R"))
+
+# dossier des occurrences filtrées au seuil 
 path_figures_occthr <- here("data",  "tidy", "occ_threshold")
 makeMyDir(path_figures_occthr)
+
+# Jeux de données réduits
+source(here("scripts", "filtre_seuil_incidence.R"))
+# source(here("scripts", "figures_cartes_de_distribution_seuil.R"))
