@@ -1,6 +1,7 @@
-# Acquisition et néttoyage des données d'occurrences
+# (1) Acquisition et nettoyage des données d'occurrences ----
 # - du Muséum national d'Histoire naturelle (MNHN)
 # - de bases de données ouvertes
+# (Ancien data_occ_prep)
 
 # nettoyage des données issues de Jacim (base de données du MNHN)
 # source(here("scripts", "jacim_filter_muri_majo.R"))
@@ -26,3 +27,6 @@
 # Résumé des occurrences d'espèces, du nombre d'espèces etc...
 # pour le datapaper
 # source(here("scripts", "summary_for_datapaper.R"))
+
+# (2) Présentation des données d'occurrences pour le rapport  ----
+# (Ancien data_occ_analyses)
